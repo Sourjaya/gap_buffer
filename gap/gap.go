@@ -21,87 +21,92 @@ func (gap *Gap) GetString() string {
 
 	return string(text)
 }
-func (gap *Gap) Gap_Length() int {
+func (gap *Gap) GapLength() int {
 	return gap.end - gap.start + 1
 }
-func (gap *Gap) Buffer_Length() int {
+func (gap *Gap) BufferLength() int {
 	return len(gap.buffer)
 }
-func (gap *Gap) Insert(s []rune, position int) {
-	if gap.Gap_Length() == 0 {
-		gap.Grow(gap.Buffer_Length())
+func (gap *Gap) Insert(s []rune, position int) *Gap {
+	if gap.GapLength() == 0 {
+		gap = gap.Grow(gap.BufferLength())
 	}
 	if position != gap.start {
-		gap.Move_cursor(position)
+		gap = gap.MoveCursor(position)
 	}
 	for i := 0; i < len(s); i++ {
-		if gap.Gap_Length() == 0 {
-			gap.Grow(position)
+		if gap.GapLength() == 0 {
+			gap = gap.Grow(position)
 		}
 		gap.buffer[gap.start] = s[i]
 		gap.start += 1
 		position += 1
 	}
+	return gap
 }
-func (gap *Gap) Move_cursor(position int) {
+func (gap *Gap) MoveCursor(position int) *Gap {
 	if position < gap.start {
-		gap.Left(position)
+		gap = gap.Left(position)
 	} else {
-		gap.Right(position)
+		gap = gap.Right(position)
 	}
+	return gap
 }
-func (gap *Gap) Select_Delete(l, r int) {
-	if l != gap.start {
-		gap.Move_cursor(l)
+func (gap *Gap) SelectDelete(l, r int, isFront bool) *Gap {
+
+	if isFront {
+		gap = gap.MoveCursor(r)
+		for i := 0; i < r-l; i++ {
+			gap = gap.Backspace()
+		}
+	} else {
+		gap = gap.MoveCursor(l)
+		for i := 0; i < r-l; i++ {
+			gap = gap.Delete()
+		}
 	}
-	// if r < l {
-	// 	return
-	// }
-	// size := l - r + 1
-	// if l < gap.start && r < gap.start {
-
-	// } else if l > gap.end && r > gap.end {
-	// 	fmt.Println()
-	// } else {
-
-	// }
-	// gap.start -= size
+	return gap
 }
-func (gap *Gap) Delete() {
-	if gap.end == gap.Buffer_Length()-1 {
-		return
+func (gap *Gap) Delete() *Gap {
+	if gap.end == gap.BufferLength()-1 {
+		return gap
 	}
 	gap.end += 1
 	gap.buffer[gap.end] = 0
+	return gap
 }
-func (gap *Gap) Backspace() {
+func (gap *Gap) Backspace() *Gap {
 	if gap.start == 0 {
-		return
+		return gap
 	}
 	gap.start -= 1
 	gap.buffer[gap.start] = 0
+	return gap
 }
-func (gap *Gap) Grow(position int) {
+func (gap *Gap) Grow(position int) *Gap {
 	newbuffer := make([]rune, len(gap.buffer)*2)
 	copy(newbuffer, gap.buffer[:position])
 	copy(newbuffer[gap.end+1+len(gap.buffer):], gap.buffer[gap.end+1:])
 	gap.start = position
 	gap.end = gap.end + len(gap.buffer)
 	gap.buffer = newbuffer
+	return gap
 }
-func (gap *Gap) Left(position int) {
+func (gap *Gap) Left(position int) *Gap {
 	for position < gap.start {
 		gap.start -= 1
 		gap.end -= 1
 		gap.buffer[gap.end+1] = gap.buffer[gap.start]
 		gap.buffer[gap.start] = 0
 	}
+	return gap
 }
-func (gap *Gap) Right(position int) {
+func (gap *Gap) Right(position int) *Gap {
 	for position > gap.start {
 		gap.start += 1
 		gap.end += 1
 		gap.buffer[gap.start-1] = gap.buffer[gap.end]
 		gap.buffer[gap.end] = 0
 	}
+	return gap
 }
